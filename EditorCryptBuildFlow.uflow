@@ -12,7 +12,29 @@
         "EDITORCRYPT_BUILD_MODE": "ONLINE_CHECK=1;MACHINE_CHECK=1;PW_CHECK=1"
       },
       "noP4": true,
-      "cleanBuild": false
+      "cleanBuild": false,
+      "postBuildSteps": [
+        {
+          "type": "delete",
+          "pattern": "Source/*/Private/**",
+          "destination": null
+        },
+        {
+          "type": "delete",
+          "pattern": "Source/*/Public/**",
+          "destination": null
+        },
+        {
+          "type": "delete",
+          "pattern": "Binaries/*/*.pdb",
+          "destination": null
+        },
+        {
+          "type": "copy",
+          "pattern": "Source/EditorCrypt/ThirdParty/polyhook/bin/PolyHook_2.dll",
+          "destination": "Binaries/Win64"
+        }
+      ]
     },
     {
       "name": "\u79BB\u7EBF\u7248",
@@ -25,7 +47,29 @@
         "EDITORCRYPT_BUILD_MODE": "ONLINE_CHECK=0;MACHINE_CHECK=0;PW_CHECK=0"
       },
       "noP4": true,
-      "cleanBuild": false
+      "cleanBuild": false,
+      "postBuildSteps": [
+        {
+          "type": "delete",
+          "pattern": "Source/*/Private/**",
+          "destination": null
+        },
+        {
+          "type": "delete",
+          "pattern": "Source/*/Public/**",
+          "destination": null
+        },
+        {
+          "type": "delete",
+          "pattern": "Binaries/*/*.pdb",
+          "destination": null
+        },
+        {
+          "type": "copy",
+          "pattern": "Source/EditorCrypt/ThirdParty/polyhook/bin/PolyHook_2.dll",
+          "destination": "Binaries/Win64"
+        }
+      ]
     },
     {
       "name": "\u5728\u7EBF\u7248",
@@ -38,7 +82,29 @@
         "EDITORCRYPT_BUILD_MODE": "ONLINE_CHECK=1;MACHINE_CHECK=0;PW_CHECK=0"
       },
       "noP4": true,
-      "cleanBuild": false
+      "cleanBuild": false,
+      "postBuildSteps": [
+        {
+          "type": "delete",
+          "pattern": "Source/*/Private/**",
+          "destination": null
+        },
+        {
+          "type": "delete",
+          "pattern": "Source/*/Public/**",
+          "destination": null
+        },
+        {
+          "type": "delete",
+          "pattern": "Binaries/*/*.pdb",
+          "destination": null
+        },
+        {
+          "type": "copy",
+          "pattern": "Source/EditorCrypt/ThirdParty/polyhook/bin/PolyHook_2.dll",
+          "destination": "Binaries/Win64"
+        }
+      ]
     }
   ],
   "outputDir": "F:\\ue_projects\\Build_SkylinePro"
