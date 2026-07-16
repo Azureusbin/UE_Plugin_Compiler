@@ -1,0 +1,164 @@
+<UserControl x:Class="UEPluginCompiler.Views.FlowEditorPage"
+             x:Name="page"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:UEPluginCompiler.Models"
+             Background="{StaticResource BgBrush}">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" MinHeight="120"/>
+            <RowDefinition Height="5"/>
+            <RowDefinition Height="*" MinHeight="100"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+            <Button Content="New" Command="{Binding NewFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
+            <Button Content="Open" Command="{Binding OpenFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
+            <Button Content="Save" Command="{Binding SaveFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
+            <Button Content="Save As..." Command="{Binding SaveAsFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
+        </StackPanel>
+
+        <!-- Top half: Task List + Add + Output bar -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Tasks}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:BuildTask}">
+                            <Border Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="3"
+                                    Padding="8,6" Margin="0,0,0,4">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" FontWeight="SemiBold" FontSize="13"
+                                                   Foreground="{StaticResource TextBrush}"
+                                                   Text="{Binding Name, StringFormat='Task: {0}'}"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Content="Edit" Style="{StaticResource SecondaryButtonStyle}"
+                                                    Width="40" Height="24" FontSize="10" Padding="0"
+                                                    Command="{Binding DataContext.EditTaskCommand, ElementName=page}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="📋" Style="{StaticResource SecondaryButtonStyle}"
+                                                    Width="28" Height="24" FontSize="10" Padding="0" ToolTip="Copy"
+                                                    Command="{Binding DataContext.CopyTaskCommand, ElementName=page}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="▲" Style="{StaticResource SecondaryButtonStyle}"
+                                                    Width="28" Height="24" FontSize="10" Padding="0" ToolTip="Move Up"
+                                                    Command="{Binding DataContext.MoveUpTaskCommand, ElementName=page}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="▼" Style="{StaticResource SecondaryButtonStyle}"
+                                                    Width="28" Height="24" FontSize="10" Padding="0" ToolTip="Move Down"
+                                                    Command="{Binding DataContext.MoveDownTaskCommand, ElementName=page}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="✕" Style="{StaticResource SecondaryButtonStyle}"
+                                                    Width="28" Height="24" FontSize="10" Padding="0" ToolTip="Remove"
+                                                    Foreground="{StaticResource ErrorBrush}"
+                                                    Command="{Binding DataContext.RemoveTaskCommand, ElementName=page}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Grid.Row="1" Margin="0,2,0,0">
+                                        <TextBlock Foreground="{StaticResource DimTextBrush}" FontSize="11"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="Engines: {0}">
+                                                    <Binding Path="EngineVersionsDisplay" Mode="OneWay"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <TextBlock Foreground="{StaticResource DimTextBrush}" FontSize="11"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{Binding PluginName, StringFormat='Plugin: {0}'}"/>
+                                        <TextBlock Foreground="{StaticResource WarningBrush}" FontSize="11"
+                                                   Visibility="{Binding HasEnvVars, Converter={StaticResource BoolToVisConverter}}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{Binding EnvVarDisplay, StringFormat='Env: {0}'}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <Button Grid.Row="1" Content="+ Add Task" Command="{Binding AddTaskCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}" FontSize="13"
+                    HorizontalAlignment="Left" Margin="0,4,0,4"/>
+
+            <Grid Grid.Row="2" Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Output:" VerticalAlignment="Center" Margin="0,0,8,0"
+                           Foreground="{StaticResource DimTextBrush}" FontSize="12"/>
+                <TextBox Grid.Column="1" Text="{Binding GlobalOutputDir, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{StaticResource InputBgBrush}" Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}" FontSize="12" Margin="0,0,4,0"/>
+                <Button Grid.Column="2" Content="Browse..." Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseOutputCommand}" FontSize="12" Margin="0,0,8,0"/>
+                <Button Grid.Column="3" Content="Run All Tasks" Command="{Binding RunAllCommand}"
+                        Width="130" FontSize="13" FontWeight="SemiBold"
+                        Visibility="{Binding NotCompiling, Converter={StaticResource BoolToVisConverter}}"/>
+                <Button Grid.Column="3" Content="Cancel" Style="{StaticResource CancelButtonStyle}"
+                        Command="{Binding CancelCommand}" Width="100" FontSize="13"
+                        Visibility="{Binding IsCompiling, Converter={StaticResource BoolToVisConverter}}"/>
+            </Grid>
+        </Grid>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch"
+                      Background="{StaticResource BorderBrush}" Cursor="SizeNS"/>
+
+        <!-- Bottom half: Build Output -->
+        <GroupBox Grid.Row="3" Header="Build Output"
+                  Visibility="{Binding IsOutputVisible, Converter={StaticResource BoolToVisConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                    <CheckBox Content="Word Wrap" IsChecked="{Binding WordWrap}"
+                              VerticalAlignment="Center" Margin="0,0,16,0"
+                              Checked="ChkWrap_Changed" Unchecked="ChkWrap_Changed"/>
+                    <Button Content="Open Output Folder" Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="12" Padding="8,4" Click="BtnOpenOutput_Click"/>
+                </StackPanel>
+                <ProgressBar Grid.Row="1" IsIndeterminate="{Binding IsProgressIndeterminate}"
+                             Value="{Binding ProgressPercent}" Minimum="0" Maximum="100"/>
+                <TextBox x:Name="txtOutput" Grid.Row="2" IsReadOnly="True"
+                         FontFamily="Consolas" FontSize="12"
+                         Background="#121212" Foreground="#CCCCCC" BorderThickness="0"
+                         TextWrapping="Wrap"
+                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible"
+                         AcceptsReturn="True" UndoLimit="0" IsUndoEnabled="False"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="4">
+            <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis"/>
+        </StatusBar>
+    </Grid>
+</UserControl>

@@ -1,0 +1,161 @@
+<Window x:Class="UEPluginCompiler.Views.TaskEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:UEPluginCompiler.ViewModels"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Edit Task"
+        Width="680" Height="600"
+        MinWidth="600" MinHeight="500"
+        Background="{StaticResource BgBrush}"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" ResizeMode="CanResize"
+        ShowInTaskbar="False">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome GlassFrameThickness="0" CaptionHeight="34"
+                            CornerRadius="0" ResizeBorderThickness="4"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="{StaticResource BgBrush}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="34"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar -->
+        <Grid Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+              MouseLeftButtonDown="TitleBar_Drag">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="  Edit Task" Foreground="{StaticResource TextBrush}"
+                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                       shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+            <Button Grid.Column="1" Content="&#xE8BB;" Style="{StaticResource TitleBarCloseButtonStyle}"
+                    Click="BtnClose_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Task Name -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Task Name" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding TaskName, UpdateSourceTrigger=PropertyChanged}"
+                     Background="{StaticResource InputBgBrush}"
+                     Foreground="{StaticResource TextBrush}"
+                     BorderBrush="{StaticResource BorderBrush}"/>
+        </StackPanel>
+
+        <!-- Engine Selection -->
+        <GroupBox Grid.Row="1" Header="Engine Selection" Margin="0,0,0,8">
+            <DataGrid ItemsSource="{Binding Engines}"
+                      AutoGenerateColumns="False"
+                      Height="120" MaxHeight="160"
+                      CanUserAddRows="False" CanUserDeleteRows="False">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="36" IsReadOnly="False"/>
+                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="80"/>
+                    <DataGridTextColumn Header="Path" Binding="{Binding RootPath}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <!-- Plugin -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,8">
+            <TextBlock Text="Plugin File" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding PluginPath, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{StaticResource InputBgBrush}"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}" Margin="0,0,4,0"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowsePluginCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"/>
+            </Grid>
+            <TextBlock Text="{Binding PluginInfo}" Foreground="{StaticResource DimTextBrush}" FontSize="12" Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <!-- Output Dir (override) -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,8">
+            <TextBlock Text="Output Dir (blank = use Flow default)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding OutputDir, UpdateSourceTrigger=PropertyChanged}"
+                     Background="{StaticResource InputBgBrush}"
+                     Foreground="{StaticResource TextBrush}"
+                     BorderBrush="{StaticResource BorderBrush}"/>
+        </StackPanel>
+
+        <!-- Environment Variables -->
+        <GroupBox Grid.Row="4" Header="Environment Variables" Margin="0,0,0,8"
+                  MinHeight="120">
+            <DockPanel>
+                <Button DockPanel.Dock="Bottom" Content="+ Add Variable"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding AddEnvVarCommand}"
+                        HorizontalAlignment="Left" Margin="0,4,0,0"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding EnvVars}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="{StaticResource InputBgBrush}"
+                                             Foreground="{StaticResource TextBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"
+                                             Margin="0,0,4,0"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="{StaticResource InputBgBrush}"
+                                             Foreground="{StaticResource TextBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"
+                                             Margin="0,0,4,0"/>
+                                    <Button Grid.Column="2" Content="X"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="28" Height="28" Padding="0"
+                                            Command="{Binding DataContext.RemoveEnvVarCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </GroupBox>
+
+        <!-- Options + Buttons -->
+        <Grid Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <CheckBox Content="Skip Perforce (-NoP4)" IsChecked="{Binding NoP4}" Margin="0,0,14,0"/>
+                <CheckBox Content="Clean Build (-Clean)" IsChecked="{Binding CleanBuild}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="OK" Command="{Binding OKCommand}" Width="80" IsDefault="True"/>
+                <Button Content="Cancel" Command="{Binding CancelCommand}" Width="80"
+                        Style="{StaticResource SecondaryButtonStyle}" IsCancel="True"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+    </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,45 @@
+{
+  "name": "Untitled",
+  "tasks": [
+    {
+      "name": "\u4E09\u91CD\u52A0\u5BC6",
+      "enginePaths": [
+        "C:\\Program Files\\Epic Games\\UE_5.8"
+      ],
+      "pluginPath": "F:\\ue_projects\\SkylineDevelopUE5\\Plugins\\EditorCrypt\\EditorCrypt.uplugin",
+      "outputDir": "",
+      "envVars": {
+        "EDITORCRYPT_BUILD_MODE": "ONLINE_CHECK=1;MACHINE_CHECK=1;PW_CHECK=1"
+      },
+      "noP4": true,
+      "cleanBuild": false
+    },
+    {
+      "name": "\u79BB\u7EBF\u7248",
+      "enginePaths": [
+        "C:\\Program Files\\Epic Games\\UE_5.8"
+      ],
+      "pluginPath": "F:\\ue_projects\\SkylineDevelopUE5\\Plugins\\EditorCrypt\\EditorCrypt.uplugin",
+      "outputDir": "",
+      "envVars": {
+        "EDITORCRYPT_BUILD_MODE": "ONLINE_CHECK=0;MACHINE_CHECK=0;PW_CHECK=0"
+      },
+      "noP4": true,
+      "cleanBuild": false
+    },
+    {
+      "name": "\u5728\u7EBF\u7248",
+      "enginePaths": [
+        "C:\\Program Files\\Epic Games\\UE_5.8"
+      ],
+      "pluginPath": "F:\\ue_projects\\SkylineDevelopUE5\\Plugins\\EditorCrypt\\EditorCrypt.uplugin",
+      "outputDir": "",
+      "envVars": {
+        "EDITORCRYPT_BUILD_MODE": "ONLINE_CHECK=1;MACHINE_CHECK=0;PW_CHECK=0"
+      },
+      "noP4": true,
+      "cleanBuild": false
+    }
+  ],
+  "outputDir": "F:\\ue_projects\\Build_SkylinePro"
+}
