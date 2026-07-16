@@ -17,7 +17,8 @@
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource BgBrush}">
+    <Border Background="{StaticResource BgBrush}"
+            BorderBrush="{StaticResource WindowBorderBrush}" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="34"/>   <!-- title bar -->
@@ -25,7 +26,7 @@
             </Grid.RowDefinitions>
 
             <!-- Title Bar -->
-            <Grid Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+            <Grid Grid.Row="0" Background="{StaticResource TitleBarBrush}"
                   MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -52,6 +53,10 @@
                             Content="&#xE8BB;" ToolTip="Close" Click="BtnClose_Click"/>
                 </StackPanel>
             </Grid>
+
+            <!-- Title bar divider -->
+            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                    Background="{StaticResource WindowBorderBrush}" IsHitTestVisible="False"/>
 
             <!-- Page container -->
             <ContentControl x:Name="PageHost" Grid.Row="1"/>

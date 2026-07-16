@@ -30,8 +30,7 @@ public partial class MainWindow : Window
             catch (Exception ex)
             {
                 Logger.LogException(ex);
-                MessageBox.Show($"Failed to open flow:\n{ex.Message}",
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                DarkDialog.Info("Error", $"Failed to open flow:\n{ex.Message}");
             }
         };
         PageHost.Content = new WelcomePage { DataContext = welcomeVm };
@@ -55,6 +54,9 @@ public partial class MainWindow : Window
 
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
+        // Already on the settings page — don't stack another one
+        if (PageHost.Content is SettingsPage) return;
+
         // Preserve current page before showing settings
         var prevContent = PageHost.Content;
         var settingsVm = new SettingsViewModel();
@@ -75,8 +77,8 @@ public partial class MainWindow : Window
     {
         if (PageHost.Content is FlowEditorPage page && page.IsCompiling)
         {
-            if (!CompletionDialog.Confirm(this, "Compilation In Progress",
-                    "A compilation is in progress. Close anyway?"))
+            if (!DarkDialog.Confirm("Compilation In Progress",
+                    "A compilation is in progress. Close anyway?", "Close Anyway"))
                 e.Cancel = true;
         }
     }

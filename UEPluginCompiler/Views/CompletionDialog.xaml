@@ -15,7 +15,8 @@
                             CornerRadius="0" UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource BgBrush}">
+    <Border Background="{StaticResource BgBrush}"
+            BorderBrush="{StaticResource WindowBorderBrush}" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="34"/>
@@ -23,12 +24,16 @@
             </Grid.RowDefinitions>
 
             <!-- Title bar -->
-            <Grid Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+            <Grid Grid.Row="0" Background="{StaticResource TitleBarBrush}"
                   MouseLeftButtonDown="TitleBar_Drag">
                 <TextBlock Text="  BuildFlow Complete" Foreground="{StaticResource TextBrush}"
                            FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
             </Grid>
+
+            <!-- Title bar divider -->
+            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                    Background="{StaticResource WindowBorderBrush}" IsHitTestVisible="False"/>
 
             <!-- Content -->
             <Grid Grid.Row="1" Margin="20,16,20,16">
@@ -46,7 +51,7 @@
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <Button Content="Open Output Folder" Click="BtnOpen_Click"
-                            Width="140" Margin="0,0,8,0"/>
+                            MinWidth="220" Padding="14,6" Margin="0,0,8,0"/>
                     <Button Content="Close" Style="{StaticResource SecondaryButtonStyle}"
                             Width="80" Click="BtnClose_Click" IsCancel="True"/>
                 </StackPanel>

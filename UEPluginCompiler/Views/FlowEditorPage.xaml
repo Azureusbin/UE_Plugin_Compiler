@@ -91,6 +91,10 @@
                                                    Visibility="{Binding HasEnvVars, Converter={StaticResource BoolToVisConverter}}"
                                                    TextTrimming="CharacterEllipsis"
                                                    Text="{Binding EnvVarDisplay, StringFormat='Env: {0}'}"/>
+                                        <TextBlock Foreground="{StaticResource DimTextBrush}" FontSize="11"
+                                                   Visibility="{Binding HasPostBuildSteps, Converter={StaticResource BoolToVisConverter}}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{Binding PostBuildStepsDisplay, StringFormat='Post-build: {0}'}"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -144,13 +148,14 @@
                               VerticalAlignment="Center" Margin="0,0,16,0"
                               Checked="ChkWrap_Changed" Unchecked="ChkWrap_Changed"/>
                     <Button Content="Open Output Folder" Style="{StaticResource SecondaryButtonStyle}"
-                            FontSize="12" Padding="8,4" Click="BtnOpenOutput_Click"/>
+                            MinWidth="220" FontSize="12" Padding="8,4" Click="BtnOpenOutput_Click"/>
                 </StackPanel>
                 <ProgressBar Grid.Row="1" IsIndeterminate="{Binding IsProgressIndeterminate}"
                              Value="{Binding ProgressPercent}" Minimum="0" Maximum="100"/>
                 <RichTextBox x:Name="txtOutput" Grid.Row="2" IsReadOnly="True"
                              FontFamily="Consolas" FontSize="12"
-                             Background="#121212" Foreground="#CCCCCC" BorderThickness="0"
+                             Background="{StaticResource InputBgBrush}"
+                             Foreground="{StaticResource TextBrush}" BorderThickness="0"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible"
                              UndoLimit="0" IsUndoEnabled="False">
                     <RichTextBox.Resources>

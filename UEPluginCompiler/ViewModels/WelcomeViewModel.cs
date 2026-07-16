@@ -45,8 +45,7 @@ public class WelcomeViewModel : INotifyPropertyChanged
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to open flow:\n{ex.Message}", "Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    Views.DarkDialog.Info("Error", $"Failed to open flow:\n{ex.Message}");
                 }
             }
         });
@@ -63,8 +62,7 @@ public class WelcomeViewModel : INotifyPropertyChanged
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to open flow:\n{ex.Message}", "Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    Views.DarkDialog.Info("Error", $"Failed to open flow:\n{ex.Message}");
                     RefreshRecentList();
                 }
             }

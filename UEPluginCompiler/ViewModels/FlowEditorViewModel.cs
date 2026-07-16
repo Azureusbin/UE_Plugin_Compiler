@@ -130,8 +130,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
     {
         if (Tasks.Count > 0)
         {
-            var r = MessageBox.Show("Discard current flow?", "New Flow", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (r != MessageBoxResult.Yes) return;
+            if (!Views.DarkDialog.Confirm("New Flow", "Discard current flow?", "Discard")) return;
         }
         SetFlow(new BuildFlow { Name = "Untitled" });
     }
@@ -142,7 +141,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         if (d.ShowDialog() == true)
         {
             try { SetFlow(FlowSerializer.Load(d.FileName)); AddToRecent(d.FileName); }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { Views.DarkDialog.Info("Error", $"Failed to open flow:\n{ex.Message}"); }
         }
     }
 
@@ -261,6 +260,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         int totalSteps = Tasks.Sum(t => t.EnginePaths.Count);
         int step = 0;
         var allResults = new List<(BuildTask Task, EngineInstall Engine, BuildResult Result)>();
+        var tempRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
@@ -275,59 +275,99 @@ public class FlowEditorViewModel : INotifyPropertyChanged
 
                     var engine = allEngines.FirstOrDefault(e =>
                         string.Equals(e.RootPath, enginePath, StringComparison.OrdinalIgnoreCase));
-                    if (engine == null) { LogLines.Add($"⚠ Engine not found: {enginePath}"); continue; }
+                    if (engine == null) { Log($"⚠ Engine not found: {enginePath}"); continue; }
 
                     var outputDir = !string.IsNullOrWhiteSpace(task.OutputDir) ? task.OutputDir : GlobalOutputDir;
                     var pluginName = string.IsNullOrWhiteSpace(task.PluginPath)
                         ? "Plugin" : System.IO.Path.GetFileNameWithoutExtension(task.PluginPath);
                     var finalDir = System.IO.Path.Combine(outputDir, engine.Version, task.Name, pluginName);
-                    var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
-                        "UEPluginCompiler", Guid.NewGuid().ToString("N"));
+
+                    // Intermediate files live inside the output dir (same drive, easy to find/clean)
+                    var tempRoot = System.IO.Path.Combine(outputDir, "_Temp");
+                    if (tempRoots.Add(tempRoot))
+                        await TryDeleteDirectoryAsync(tempRoot); // purge leftovers from crashed/cancelled runs
+                    var tempDir = System.IO.Path.Combine(tempRoot, Guid.NewGuid().ToString("N"));
 
                     StatusText = $"Running Task: {task.Name} → UE {engine.Version} ({step}/{totalSteps})";
                     ProgressPercent = (step - 1) * 100 / totalSteps;
 
-                    LogLines.Add("");
-                    LogLines.Add($"══════ Task: {task.Name} → UE {engine.Version} ══════");
-                    LogLines.Add($"[{step}/{totalSteps}] Output: {finalDir}");
+                    Log("");
+                    Log($"══════ Task: {task.Name} → UE {engine.Version} ══════");
+                    Log($"[{step}/{totalSteps}] Output: {finalDir}");
+                    Log($"[{step}/{totalSteps}] Intermediate: {tempDir}");
 
                     var request = new CompileRequest(engine, task.PluginPath, tempDir, task.CleanBuild, "Win64", task.NoP4, task.EnvVars);
 
-                    var outputProgress = new Progress<string>(line =>
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            if (LogLines.Count > 5000) LogLines.RemoveAt(0);
-                            LogLines.Add(line);
-                            OutputLineReceived?.Invoke(line);
-                        });
-                    });
+                    var outputProgress = new Progress<string>(Log);
 
                     var result = await _compiler.CompileAsync(request, outputProgress, new Progress<int>(), _cts.Token);
+
+                    if (!result.WasCancelled)
+                    {
+                        if (result.Success)
+                        {
+                            // Post-build steps run on the temp dir, BEFORE copying to the final output dir,
+                            // so the output only ever receives a fully cleaned package.
+                            if (task.PostBuildSteps is { Count: > 0 })
+                            {
+                                Log($"── Post-build: {task.PostBuildSteps.Count} step(s) ──");
+                                var stepEnv = new Dictionary<string, string>(task.EnvVars)
+                                {
+                                    ["ENGINE_VERSION"] = engine.Version,
+                                    ["ENGINE_DIR"] = engine.RootPath,
+                                    ["TASK_NAME"] = task.Name,
+                                    ["OUTPUT_DIR"] = finalDir,
+                                };
+                                var pbOk = await PostBuildRunner.RunAsync(
+                                    tempDir, task.PostBuildSteps, Log,
+                                    pluginDir: System.IO.Path.GetDirectoryName(task.PluginPath),
+                                    extraEnv: stepEnv,
+                                    cancellationToken: _cts.Token);
+                                if (!pbOk)
+                                {
+                                    result = result with { Success = false };
+                                    Log(">>> FAILED (post-build step error)");
+                                }
+                                else
+                                {
+                                    Log($"── Post-build finished: {task.PostBuildSteps.Count} step(s) OK ──");
+                                }
+                            }
+
+                            // Copy from temp to final output dir (clean previous products first)
+                            if (result.Success)
+                            {
+                                try
+                                {
+                                    if (System.IO.Directory.Exists(finalDir))
+                                    {
+                                        Log($"Cleaning previous output: {finalDir}");
+                                        if (!await TryDeleteDirectoryAsync(finalDir))
+                                            throw new IOException($"could not delete previous output (files in use?): {finalDir}");
+                                    }
+                                    CopyDirectory(tempDir, finalDir);
+                                    Log($">>> SUCCESS ({result.Duration.TotalMinutes:F1} min) → {finalDir}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    result = result with { Success = false };
+                                    Log($">>> FAILED (copy to output error: {ex.Message})");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Log($">>> FAILED (exit code {result.ExitCode})");
+                        }
+                    }
+
                     allResults.Add((task, engine, result));
 
+                    // Cleanup temp (retries — a killed UAT may hold file handles briefly)
+                    if (!await TryDeleteDirectoryAsync(tempDir))
+                        Log($"warning: could not delete intermediate dir: {tempDir}");
+
                     if (result.WasCancelled) break;
-
-                    // Copy from temp to final output dir
-                    if (result.Success)
-                    {
-                        try
-                        {
-                            CopyDirectory(tempDir, finalDir);
-                            LogLines.Add($">>> SUCCESS ({result.Duration.TotalMinutes:F1} min) → {finalDir}");
-                        }
-                        catch (Exception ex)
-                        {
-                            LogLines.Add($">>> SUCCESS but copy failed: {ex.Message}");
-                        }
-                    }
-                    else
-                    {
-                        LogLines.Add($">>> FAILED (exit code {result.ExitCode})");
-                    }
-
-                    // Cleanup temp
-                    try { System.IO.Directory.Delete(tempDir, true); } catch { }
                 }
             }
 
@@ -387,7 +427,50 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         }
         catch (OperationCanceledException) { IsCompiling = false; StatusText = "Cancelled."; }
         catch (Exception ex) { IsCompiling = false; StatusText = $"Error: {ex.Message}"; LogLines.Add($"FATAL: {ex.Message}"); }
-        finally { _cts?.Dispose(); _cts = null; }
+        finally
+        {
+            // Remove intermediate roots entirely (covers cancel/exception paths too)
+            foreach (var root in tempRoots)
+                await TryDeleteDirectoryAsync(root);
+            _cts?.Dispose(); _cts = null;
+        }
+    }
+
+    /// <summary>Thread-safe log line: appends to LogLines AND streams to the output view.</summary>
+    private void Log(string line)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (LogLines.Count > 5000) LogLines.RemoveAt(0);
+            LogLines.Add(line);
+            OutputLineReceived?.Invoke(line);
+        });
+    }
+
+    /// <summary>Deletes a directory with retries (a freshly killed UAT can hold handles briefly;
+    /// UAT output files are sometimes read-only). Returns true when the directory is gone.</summary>
+    private static async Task<bool> TryDeleteDirectoryAsync(string dir, int attempts = 5, int delayMs = 400)
+    {
+        for (int i = 0; i < attempts; i++)
+        {
+            try
+            {
+                if (!System.IO.Directory.Exists(dir)) return true;
+                System.IO.Directory.Delete(dir, true);
+                return true;
+            }
+            catch
+            {
+                try
+                {
+                    foreach (var f in System.IO.Directory.EnumerateFiles(dir, "*", System.IO.SearchOption.AllDirectories))
+                        System.IO.File.SetAttributes(f, System.IO.FileAttributes.Normal);
+                }
+                catch { }
+                await Task.Delay(delayMs);
+            }
+        }
+        return !System.IO.Directory.Exists(dir);
     }
 
     private void Cancel() { _cts?.Cancel(); _compiler.Cancel(); StatusText = "Cancelling..."; }

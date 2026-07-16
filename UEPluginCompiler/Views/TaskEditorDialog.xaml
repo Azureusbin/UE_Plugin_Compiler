@@ -4,8 +4,8 @@
         xmlns:vm="clr-namespace:UEPluginCompiler.ViewModels"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Edit Task"
-        Width="680" Height="600"
-        MinWidth="600" MinHeight="500"
+        Width="680" Height="860"
+        MinWidth="600" MinHeight="700"
         Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" ResizeMode="CanResize"
@@ -17,7 +17,8 @@
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource BgBrush}">
+    <Border Background="{StaticResource BgBrush}"
+            BorderBrush="{StaticResource WindowBorderBrush}" BorderThickness="1">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="34"/>
@@ -25,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <!-- Title Bar -->
-        <Grid Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+        <Grid Grid.Row="0" Background="{StaticResource TitleBarBrush}"
               MouseLeftButtonDown="TitleBar_Drag">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -38,12 +39,17 @@
                     Click="BtnClose_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
         </Grid>
 
+        <!-- Title bar divider -->
+        <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom"
+                Background="{StaticResource WindowBorderBrush}" IsHitTestVisible="False"/>
+
         <Grid Grid.Row="1" Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -139,8 +145,83 @@
             </DockPanel>
         </GroupBox>
 
+        <!-- Post-Build Steps -->
+        <GroupBox Grid.Row="5" Header="Post-Build Steps (run on package before copy to output)"
+                  Margin="0,0,0,8" MinHeight="110">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
+                    <Button Content="+ Delete Step"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding AddDeleteStepCommand}" Margin="0,0,6,0"/>
+                    <Button Content="+ Copy Step"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding AddCopyStepCommand}" Margin="0,0,6,0"/>
+                    <Button Content="+ Run Script"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding AddRunStepCommand}"/>
+                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding PostBuildSteps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="46"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding TypeLabel}"
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               FontSize="11" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="{StaticResource InputBgBrush}"
+                                             Foreground="{StaticResource TextBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"
+                                             Margin="0,0,4,0"
+                                             ToolTip="delete/copy: glob relative to package dir, e.g. Source/*/Private/**. run: .bat/.cmd path (absolute or plugin-relative)"/>
+                                    <Button Grid.Column="2" Content="..."
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="28" Height="28" Padding="0" Margin="0,0,4,0"
+                                            ToolTip="Pick source file / script"
+                                            Visibility="{Binding HasSourceBrowse, Converter={StaticResource BoolToVisConverter}}"
+                                            Command="{Binding DataContext.BrowseStepSourceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <TextBlock Grid.Column="3" Text="&#x2192;" VerticalAlignment="Center" Margin="0,0,4,0"
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               Visibility="{Binding IsCopy, Converter={StaticResource BoolToVisConverter}}"/>
+                                    <TextBox Grid.Column="4" Text="{Binding Destination, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="{StaticResource InputBgBrush}"
+                                             Foreground="{StaticResource TextBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"
+                                             Margin="0,0,4,0"
+                                             ToolTip="Destination dir relative to package dir, e.g. Binaries/Win64"
+                                             Visibility="{Binding IsCopy, Converter={StaticResource BoolToVisConverter}}"/>
+                                    <Button Grid.Column="5" Content="..."
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="28" Height="28" Padding="0" Margin="0,0,4,0"
+                                            ToolTip="Pick destination folder (converted to a plugin-relative path)"
+                                            Visibility="{Binding IsCopy, Converter={StaticResource BoolToVisConverter}}"
+                                            Command="{Binding DataContext.BrowseStepDestCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Grid.Column="6" Content="X"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="28" Height="28" Padding="0"
+                                            Command="{Binding DataContext.RemovePostBuildStepCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </GroupBox>
+
         <!-- Options + Buttons -->
-        <Grid Grid.Row="5">
+        <Grid Grid.Row="6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

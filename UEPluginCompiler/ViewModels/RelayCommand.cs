@@ -33,8 +33,7 @@ public class AsyncRelayCommand : ICommand
         try { await _execute(parameter); }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error: {ex.Message}", "Error",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            Views.DarkDialog.Info("Error", $"Error: {ex.Message}");
         }
         finally { _isExecuting = false; CommandManager.InvalidateRequerySuggested(); }
     }
