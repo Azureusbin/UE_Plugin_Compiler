@@ -90,6 +90,12 @@ public class AppSettings
 {
     /// <summary>Recently opened .uflow file paths.</summary>
     public List<string> RecentFlows { get; set; } = [];
+
+    /// <summary>Log coloring (hex RRGGBB).</summary>
+    public string ErrorColor { get; set; } = "#E74856";
+    public string WarningColor { get; set; } = "#F9A825";
+    public string SuccessColor { get; set; } = "#16C60C";
+    public string NormalColor { get; set; } = "#CCCCCC";
 }
 
 public class CustomEngineEntry

@@ -37,30 +37,76 @@
                     Style="{StaticResource SecondaryButtonStyle}" FontSize="13"/>
         </StackPanel>
 
-        <!-- Engine list -->
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Engines}"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False" CanUserDeleteRows="False"
-                  IsReadOnly="True">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="100"/>
-                <DataGridTextColumn Header="Display Name" Binding="{Binding DisplayName}" Width="200"/>
-                <DataGridTextColumn Header="Path" Binding="{Binding RootPath}" Width="*"/>
-                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="80"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="80"/>
-                <DataGridTemplateColumn Header="" Width="50">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="✕" Style="{StaticResource SecondaryButtonStyle}"
-                                    Width="28" Height="24" FontSize="10" Padding="0"
-                                    Foreground="{StaticResource ErrorBrush}" ToolTip="Remove"
-                                    Command="{Binding DataContext.RemoveCustomEngineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+        <!-- Scrollable content -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Engine list -->
+                <DataGrid ItemsSource="{Binding Engines}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          IsReadOnly="True" MaxHeight="200" Margin="0,0,0,12">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="100"/>
+                        <DataGridTextColumn Header="Display Name" Binding="{Binding DisplayName}" Width="200"/>
+                        <DataGridTextColumn Header="Path" Binding="{Binding RootPath}" Width="*"/>
+                        <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="80"/>
+                        <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="80"/>
+                        <DataGridTemplateColumn Header="" Width="50">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="✕" Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="28" Height="24" FontSize="10" Padding="0"
+                                            Foreground="{StaticResource ErrorBrush}" ToolTip="Remove"
+                                            Command="{Binding DataContext.RemoveCustomEngineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Log Colors -->
+                <GroupBox Header="Log Colors" Margin="0,0,0,8">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Pick colors for log output." Foreground="{StaticResource DimTextBrush}"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                            <Button Content="Reset Defaults" Style="{StaticResource SecondaryButtonStyle}"
+                                    FontSize="11" Padding="8,3" Margin="12,0,0,0"
+                                    Command="{Binding ResetColorsCommand}"/>
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding ColorRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center"
+                                                   Foreground="{StaticResource TextBrush}"/>
+                                        <Button Grid.Column="1" Height="28" HorizontalAlignment="Left" MinWidth="110"
+                                                Click="PickColor_Click" Tag="{Binding}" ToolTip="Click to pick color">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                                            CornerRadius="2" Background="{Binding Brush}" Padding="6,2"
+                                                            Cursor="Hand">
+                                                        <TextBlock Text="{Binding Hex, Mode=OneWay}" Foreground="White"
+                                                                   FontSize="11" FontFamily="Consolas"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- Status -->
         <StatusBar Grid.Row="3">

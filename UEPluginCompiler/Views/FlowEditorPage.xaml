@@ -14,7 +14,8 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4"
+                    IsEnabled="{Binding NotCompiling}">
             <Button Content="New" Command="{Binding NewFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
             <Button Content="Open" Command="{Binding OpenFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
             <Button Content="Save" Command="{Binding SaveFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
@@ -147,12 +148,18 @@
                 </StackPanel>
                 <ProgressBar Grid.Row="1" IsIndeterminate="{Binding IsProgressIndeterminate}"
                              Value="{Binding ProgressPercent}" Minimum="0" Maximum="100"/>
-                <TextBox x:Name="txtOutput" Grid.Row="2" IsReadOnly="True"
-                         FontFamily="Consolas" FontSize="12"
-                         Background="#121212" Foreground="#CCCCCC" BorderThickness="0"
-                         TextWrapping="Wrap"
-                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible"
-                         AcceptsReturn="True" UndoLimit="0" IsUndoEnabled="False"/>
+                <RichTextBox x:Name="txtOutput" Grid.Row="2" IsReadOnly="True"
+                             FontFamily="Consolas" FontSize="12"
+                             Background="#121212" Foreground="#CCCCCC" BorderThickness="0"
+                             HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible"
+                             UndoLimit="0" IsUndoEnabled="False">
+                    <RichTextBox.Resources>
+                        <Style TargetType="Paragraph">
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="LineHeight" Value="16"/>
+                        </Style>
+                    </RichTextBox.Resources>
+                </RichTextBox>
             </Grid>
         </GroupBox>
 

@@ -28,21 +28,17 @@
             <Grid Grid.Row="0" Background="{StaticResource SurfaceBrush}"
                   MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Background="Transparent"
-                        shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                <TextBlock Grid.Column="1" Text="UE Plugin Compiler"
+                <TextBlock Grid.Column="0" Text="  UE Plugin Compiler — AzureusBin"
                            Foreground="{StaticResource TextBrush}" FontSize="12"
                            FontWeight="SemiBold" VerticalAlignment="Center"
-                           HorizontalAlignment="Center"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                <Border Grid.Column="2" Background="Transparent"
+                <Border Grid.Column="1" Background="Transparent"
                         shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                <StackPanel Grid.Column="3" Orientation="Horizontal"
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button x:Name="BtnSettings" Style="{StaticResource TitleBarButtonStyle}"
                             Content="&#xE713;" ToolTip="Settings"

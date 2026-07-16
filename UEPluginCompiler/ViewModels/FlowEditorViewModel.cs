@@ -66,6 +66,8 @@ public class FlowEditorViewModel : INotifyPropertyChanged
     public bool WordWrap { get => _wordWrap; set { _wordWrap = value; OnPropertyChanged(); } }
 
     public event Action<string>? OutputLineReceived;
+    public event Action? CompilationStarted;
+    public event Action<string>? CompilationCompleted;
 
     public ICommand NewFlowCommand { get; }
     public ICommand OpenFlowCommand { get; }
@@ -114,7 +116,10 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         UpdateTitle();
         IsOutputVisible = false;
         LogLines.Clear();
-        StatusText = $"Flow: {flow.Name} — {Tasks.Count} task(s)";
+        var displayName = flow.FilePath != null
+            ? System.IO.Path.GetFileNameWithoutExtension(flow.FilePath)
+            : flow.Name;
+        StatusText = $"{displayName} — {Tasks.Count} task(s)";
     }
 
     private void UpdateTitle() => OnPropertyChanged(nameof(Title));
@@ -250,6 +255,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         IsCompiling = true;
         IsOutputVisible = true;
         LogLines.Clear();
+        CompilationStarted?.Invoke();
         _cts = new CancellationTokenSource();
         var startTime = DateTime.UtcNow;
         int totalSteps = Tasks.Sum(t => t.EnginePaths.Count);
@@ -272,7 +278,9 @@ public class FlowEditorViewModel : INotifyPropertyChanged
                     if (engine == null) { LogLines.Add($"⚠ Engine not found: {enginePath}"); continue; }
 
                     var outputDir = !string.IsNullOrWhiteSpace(task.OutputDir) ? task.OutputDir : GlobalOutputDir;
-                    var finalDir = System.IO.Path.Combine(outputDir, task.Name, engine.Version);
+                    var pluginName = string.IsNullOrWhiteSpace(task.PluginPath)
+                        ? "Plugin" : System.IO.Path.GetFileNameWithoutExtension(task.PluginPath);
+                    var finalDir = System.IO.Path.Combine(outputDir, engine.Version, task.Name, pluginName);
                     var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
                         "UEPluginCompiler", Guid.NewGuid().ToString("N"));
 
@@ -326,39 +334,55 @@ public class FlowEditorViewModel : INotifyPropertyChanged
             IsCompiling = false;
             var elapsed = DateTime.UtcNow - startTime;
 
-            // Summary
             var succeeded = allResults.Where(r => r.Result.Success && !r.Result.WasCancelled).ToList();
             var failed = allResults.Where(r => !r.Result.Success && !r.Result.WasCancelled).ToList();
 
-            LogLines.Add("");
-            LogLines.Add("══════ RESULTS SUMMARY ══════");
-            foreach (var g in allResults.GroupBy(r => r.Task))
-            {
-                LogLines.Add($"Task: {g.Key.Name}");
-                foreach (var r in g)
-                {
-                    if (r.Result.WasCancelled) break;
-                    LogLines.Add(r.Result.Success
-                        ? $"  ✅ UE {r.Engine.Version} — OK ({r.Result.Duration.TotalMinutes:F1} min)"
-                        : $"  ❌ UE {r.Engine.Version} — FAILED (exit code {r.Result.ExitCode})");
-                }
-            }
-            LogLines.Add($"Total: {succeeded.Count} OK, {failed.Count} FAIL in {elapsed.TotalMinutes:F1} min");
-            LogLines.Add("══════════════════════════════");
-
-            // Log files
+            // Save full log to file before clearing
             try
             {
-                var summaryLines = LogLines.ToList();
-                System.IO.File.WriteAllLines(System.IO.Path.Combine(logDir, "_summary.log"), summaryLines);
+                var fullLog = LogLines.ToList();
+                System.IO.File.WriteAllLines(System.IO.Path.Combine(logDir, "_summary.log"), fullLog);
                 var dirs = System.IO.Directory.GetDirectories(logsBase).OrderByDescending(d => d).ToList();
                 foreach (var d in dirs.Skip(10)) System.IO.Directory.Delete(d, true);
             }
             catch { }
 
-            if (_cts?.IsCancellationRequested == true) StatusText = "Cancelled.";
-            else if (failed.Count == 0) StatusText = $"All {succeeded.Count} OK in {elapsed.TotalMinutes:F1} min.";
-            else StatusText = $"{succeeded.Count} OK, {failed.Count} FAIL: {string.Join(", ", failed.Select(r => $"{r.Task.Name}/{r.Engine.Version}"))}";
+            // Clear UI log and show summary
+            LogLines.Clear();
+            OutputLineReceived?.Invoke("");
+
+            if (_cts?.IsCancellationRequested == true)
+            {
+                LogLines.Add("══════ BUILD FLOW CANCELLED ══════");
+                LogLines.Add($"  Cancelled by user after {elapsed.TotalMinutes:F1} min.");
+                if (succeeded.Count > 0)
+                    LogLines.Add($"  {succeeded.Count} task(s) completed before cancel.");
+                LogLines.Add("═════════════════════════════");
+                StatusText = $"Cancelled after {succeeded.Count} completed, {elapsed.TotalMinutes:F1} min.";
+            }
+            else
+            {
+                LogLines.Add("══════ BUILD FLOW COMPLETE ══════");
+                foreach (var g in allResults.GroupBy(r => r.Task))
+                {
+                    LogLines.Add($"  {g.Key.Name}:");
+                    foreach (var r in g)
+                    {
+                        if (r.Result.WasCancelled) break;
+                        LogLines.Add(r.Result.Success
+                            ? $"    ✅ UE {r.Engine.Version} — OK ({r.Result.Duration.TotalMinutes:F1} min)"
+                            : $"    ❌ UE {r.Engine.Version} — FAILED (exit code {r.Result.ExitCode})");
+                    }
+                }
+                LogLines.Add($"──────────────────────────────");
+                LogLines.Add($"  Total: {succeeded.Count} OK, {failed.Count} FAIL in {elapsed.TotalMinutes:F1} min");
+                LogLines.Add("══════════════════════════════");
+
+                if (failed.Count == 0) StatusText = $"All {succeeded.Count} OK in {elapsed.TotalMinutes:F1} min.";
+                else StatusText = $"{succeeded.Count} OK, {failed.Count} FAIL: {string.Join(", ", failed.Select(r => $"{r.Task.Name}/{r.Engine.Version}"))}";
+                CompilationCompleted?.Invoke(GlobalOutputDir);
+            }
+            foreach (var line in LogLines) OutputLineReceived?.Invoke(line);
             ProgressPercent = 100;
         }
         catch (OperationCanceledException) { IsCompiling = false; StatusText = "Cancelled."; }

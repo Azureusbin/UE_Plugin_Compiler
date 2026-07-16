@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using UEPluginCompiler.Models;
 using UEPluginCompiler.Services;
 
@@ -19,6 +20,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     public ICommand RefreshEnginesCommand { get; }
     public ICommand AddCustomEngineCommand { get; }
     public ICommand RemoveCustomEngineCommand { get; }
+    public ICommand ResetColorsCommand { get; }
     public ICommand BackCommand { get; }
 
     /// <summary>Raised to navigate back to the previous page.</summary>
@@ -26,6 +28,37 @@ public class SettingsViewModel : INotifyPropertyChanged
 
     private string _statusText = "";
     public string StatusText { get => _statusText; set { _statusText = value; OnPropertyChanged(); } }
+
+    // Log colors
+    public ObservableCollection<ColorRow> ColorRows { get; } = [];
+
+    private void LoadColors()
+    {
+        var s = _settingsManager.LoadSettings();
+        ColorRows.Clear();
+        ColorRows.Add(new ColorRow("Error", s.ErrorColor, _ => SetColor("Error", _)));
+        ColorRows.Add(new ColorRow("Warning", s.WarningColor, _ => SetColor("Warning", _)));
+        ColorRows.Add(new ColorRow("Success", s.SuccessColor, _ => SetColor("Success", _)));
+        ColorRows.Add(new ColorRow("Normal", s.NormalColor, _ => SetColor("Normal", _)));
+    }
+
+    public void SetColor(string label, string hex)
+    {
+        var row = ColorRows.FirstOrDefault(r => r.Label == label);
+        if (row == null) return;
+        row.UpdateHex(hex);
+        SaveColorSettings();
+    }
+
+    private void SaveColorSettings()
+    {
+        var s = _settingsManager.LoadSettings();
+        s.ErrorColor = ColorRows[0].Hex;
+        s.WarningColor = ColorRows[1].Hex;
+        s.SuccessColor = ColorRows[2].Hex;
+        s.NormalColor = ColorRows[3].Hex;
+        _settingsManager.SaveSettings(s);
+    }
 
     public SettingsViewModel()
     {
@@ -42,8 +75,18 @@ public class SettingsViewModel : INotifyPropertyChanged
                 StatusText = $"Removed: {e.DisplayName}";
             }
         });
+        ResetColorsCommand = new RelayCommand(_ =>
+        {
+            ColorRows[0].UpdateHex("#E74856");
+            ColorRows[1].UpdateHex("#F9A825");
+            ColorRows[2].UpdateHex("#16C60C");
+            ColorRows[3].UpdateHex("#CCCCCC");
+            SaveColorSettings();
+            StatusText = "Log colors reset to defaults.";
+        });
         BackCommand = new RelayCommand(_ => NavigateBack?.Invoke());
 
+        LoadColors();
         _ = LoadEnginesAsync();
     }
 
@@ -137,6 +180,39 @@ public class SettingsViewModel : INotifyPropertyChanged
         dialog.Content = grid;
         dialog.ShowDialog();
         return string.IsNullOrWhiteSpace(result) ? defaultName : result;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? n = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+}
+
+public class ColorRow : INotifyPropertyChanged
+{
+    public string Label { get; }
+    private string _hex;
+    public string Hex => _hex;
+    public Brush Brush { get; private set; }
+    private readonly Action<string> _onChanged;
+
+    public ColorRow(string label, string hex, Action<string> onChanged)
+    {
+        Label = label; _hex = hex; _onChanged = onChanged;
+        Brush = MakeBrush(hex);
+    }
+
+    public void UpdateHex(string hex)
+    {
+        _hex = hex;
+        Brush = MakeBrush(hex);
+        OnPropertyChanged(nameof(Hex));
+        OnPropertyChanged(nameof(Brush));
+        _onChanged(hex);
+    }
+
+    private static Brush MakeBrush(string hex)
+    {
+        try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); }
+        catch { return new SolidColorBrush(Colors.Gray); }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

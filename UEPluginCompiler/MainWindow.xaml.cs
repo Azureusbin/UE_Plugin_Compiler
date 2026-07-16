@@ -73,6 +73,11 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        // FlowEditor handles its own closing guard
+        if (PageHost.Content is FlowEditorPage page && page.IsCompiling)
+        {
+            if (!CompletionDialog.Confirm(this, "Compilation In Progress",
+                    "A compilation is in progress. Close anyway?"))
+                e.Cancel = true;
+        }
     }
 }
