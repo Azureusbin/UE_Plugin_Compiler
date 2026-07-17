@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -52,6 +53,15 @@ public partial class FlowEditorPage : UserControl
         catch { return new SolidColorBrush(Color.FromRgb(r, g, b)); }
     }
 
+    // Word-boundary patterns: only match standalone tokens, not substrings
+    // inside identifiers like -WarningsAsErrors or function-namesspam
+    private static readonly Regex ErrorPattern =
+        new(@"\berrors?\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex WarnPattern =
+        new(@"\bwarn(?:ing)?s?\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex SuccessPattern =
+        new(@"\bsuccess(?:ful(?:ly)?|es)?\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private void AppendColoredLine(string line)
     {
         Dispatcher.Invoke(() =>
@@ -63,13 +73,17 @@ public partial class FlowEditorPage : UserControl
             var normalBrush = GetBrush(settings.NormalColor, 0xCC, 0xCC, 0xCC);
 
             var brush = normalBrush;
-            var lower = line.ToLowerInvariant();
 
-            if (lower.Contains("error") || lower.Contains("failed") || lower.Contains("❌"))
+            // Emoji are explicit markers — check first (most reliable)
+            if (line.Contains('❌'))
                 brush = errorBrush;
-            else if (lower.Contains("warning") || lower.Contains("warn"))
+            else if (ErrorPattern.IsMatch(line) || line.Contains("failed", StringComparison.OrdinalIgnoreCase))
+                brush = errorBrush;
+            else if (line.Contains('✅'))
+                brush = successBrush;
+            else if (WarnPattern.IsMatch(line))
                 brush = warnBrush;
-            else if (lower.Contains("success") || lower.Contains("✅"))
+            else if (SuccessPattern.IsMatch(line))
                 brush = successBrush;
 
             var doc = txtOutput.Document;
