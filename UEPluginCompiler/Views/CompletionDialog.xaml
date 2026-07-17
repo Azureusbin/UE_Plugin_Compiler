@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="BuildFlow Complete"
-        Width="500" Height="250"
+        Width="580" Height="290"
         MinWidth="360" MinHeight="200"
         Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterOwner"
@@ -44,16 +44,17 @@
 
                 <StackPanel Grid.Row="0" VerticalAlignment="Center">
                     <TextBlock x:Name="txtMessage" Foreground="{StaticResource TextBrush}"
-                               FontSize="13" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                               FontSize="18" FontWeight="SemiBold"
+                               TextWrapping="Wrap" Margin="0,0,0,4"/>
                     <TextBlock x:Name="txtPath" Foreground="{StaticResource DimTextBrush}"
-                               FontSize="12" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                               FontSize="14" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <Button Content="Open Output Folder" Click="BtnOpen_Click"
-                            MinWidth="220" Padding="14,6" Margin="0,0,8,0"/>
+                            MinWidth="220" Padding="14,6" Margin="0,0,8,0" FontSize="13"/>
                     <Button Content="Close" Style="{StaticResource SecondaryButtonStyle}"
-                            Width="80" Click="BtnClose_Click" IsCancel="True"/>
+                            Width="80" FontSize="13" Click="BtnClose_Click" IsCancel="True"/>
                 </StackPanel>
             </Grid>
         </Grid>

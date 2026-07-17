@@ -19,6 +19,34 @@ public static class DarkDialog
     public static bool Confirm(string title, string message, string confirmText = "OK") =>
         ShowCore(title, message, confirmText, showCancel: true);
 
+    /// <summary>
+    /// Three-way save/discard/cancel dialog. Returns true=save, false=discard, null=cancel.
+    /// </summary>
+    public static bool? SaveDiscardCancel(string title, string message, string saveText = "Save")
+    {
+        bool? result = null;
+        var dlg = BuildWindow(title, out var contentHost, out var buttonRow);
+
+        contentHost.Child = new TextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Res<Brush>("TextBrush"),
+            FontSize = 16,
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+
+        AddButton(buttonRow, saveText, secondary: false, isDefault: true, isCancel: false,
+            onClick: () => { result = true; dlg.Close(); });
+        AddButton(buttonRow, "Discard", secondary: true, isDefault: false, isCancel: false,
+            onClick: () => { result = false; dlg.Close(); });
+        AddButton(buttonRow, "Cancel", secondary: true, isDefault: false, isCancel: true,
+            onClick: () => dlg.Close());
+
+        dlg.ShowDialog();
+        return result;
+    }
+
     /// <summary>Single-line text input. Returns null when cancelled.</summary>
     public static string? Prompt(string title, string label, string defaultText = "")
     {
@@ -33,6 +61,7 @@ public static class DarkDialog
             Foreground = Res<Brush>("TextBrush"),
             BorderBrush = Res<Brush>("BorderBrush"),
             CaretBrush = Res<Brush>("TextBrush"),
+            FontSize = 14,
         };
         input.Loaded += (_, _) => { input.Focus(); input.SelectAll(); };
 
@@ -43,6 +72,7 @@ public static class DarkDialog
         {
             Text = label,
             Foreground = Res<Brush>("TextBrush"),
+            FontSize = 14,
             Margin = new Thickness(0, 0, 0, 6)
         });
         stack.Children.Add(input);
@@ -69,6 +99,7 @@ public static class DarkDialog
             Text = message,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Res<Brush>("TextBrush"),
+            FontSize = 16,
             Margin = new Thickness(0, 0, 0, 16)
         };
 
@@ -91,7 +122,7 @@ public static class DarkDialog
         var dlg = new Window
         {
             Title = title,
-            Width = 440,
+            Width = 520,
             SizeToContent = SizeToContent.Height,
             WindowStyle = WindowStyle.None,
             ResizeMode = ResizeMode.NoResize,
@@ -114,7 +145,7 @@ public static class DarkDialog
             {
                 Text = "  " + title,
                 Foreground = Res<Brush>("TextBrush"),
-                FontSize = 12,
+                FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center
             }
@@ -167,6 +198,7 @@ public static class DarkDialog
             Margin = row.Children.Count > 0 ? new Thickness(8, 0, 0, 0) : new Thickness(0),
             IsDefault = isDefault,
             IsCancel = isCancel,
+            FontSize = 13,
         };
         if (secondary) btn.Style = Res<Style>("SecondaryButtonStyle");
         btn.Click += (_, _) => onClick();

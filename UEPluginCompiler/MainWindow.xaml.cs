@@ -40,6 +40,10 @@ public partial class MainWindow : Window
     {
         var flowVm = new FlowEditorViewModel();
         flowVm.SetFlow(flow);
+        flowVm.FlowClosed += () =>
+        {
+            Dispatcher.Invoke(() => ShowWelcome());
+        };
         PageHost.Content = new FlowEditorPage(flowVm);
         Logger.Log("FlowEditorPage shown");
     }
@@ -75,11 +79,40 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        if (PageHost.Content is FlowEditorPage page && page.IsCompiling)
+        if (PageHost.Content is FlowEditorPage page)
         {
-            if (!DarkDialog.Confirm("Compilation In Progress",
-                    "A compilation is in progress. Close anyway?", "Close Anyway"))
-                e.Cancel = true;
+            // 1. Warn about compilation in progress
+            if (page.IsCompiling)
+            {
+                if (!DarkDialog.Confirm("Compilation In Progress",
+                        "A compilation is in progress. Close anyway?", "Close Anyway"))
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+
+            // 2. Prompt to save unsaved changes
+            var vm = page.ViewModel;
+            if (vm != null && vm.IsModified)
+            {
+                var name = vm.Flow.FilePath != null
+                    ? System.IO.Path.GetFileNameWithoutExtension(vm.Flow.FilePath)
+                    : vm.Flow.Name;
+                var choice = DarkDialog.SaveDiscardCancel("Unsaved Changes",
+                    $"Save changes to \"{name}\"\nbefore closing?",
+                    vm.Flow.FilePath != null ? "Save" : "Save As…");
+
+                if (choice == null) { e.Cancel = true; return; }   // Cancel
+                if (choice == true)                                  // Save
+                {
+                    if (vm.Flow.FilePath != null)
+                        vm.DoSave(vm.Flow.FilePath);
+                    else if (!vm.DoSaveAs())
+                        { e.Cancel = true; return; }                 // SaveAs cancelled
+                }
+                // choice == false → discard, just close
+            }
         }
     }
 }

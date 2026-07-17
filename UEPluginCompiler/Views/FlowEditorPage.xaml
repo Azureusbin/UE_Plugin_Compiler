@@ -20,6 +20,10 @@
             <Button Content="Open" Command="{Binding OpenFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
             <Button Content="Save" Command="{Binding SaveFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
             <Button Content="Save As..." Command="{Binding SaveAsFlowCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"/>
+            <Border Width="1" Background="{StaticResource BorderBrush}" Margin="8,4"/>
+            <Button Content="Close Flow" Command="{Binding CloseFlowCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" FontSize="12"
+                    Foreground="{StaticResource WarningBrush}"/>
         </StackPanel>
 
         <!-- Top half: Task List + Add + Output bar -->

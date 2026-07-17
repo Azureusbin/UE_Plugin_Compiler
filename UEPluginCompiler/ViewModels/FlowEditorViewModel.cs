@@ -17,9 +17,23 @@ public class FlowEditorViewModel : INotifyPropertyChanged
 
     public BuildFlow Flow { get; private set; } = new();
 
-    public string Title => string.IsNullOrWhiteSpace(Flow.FilePath)
-        ? $"UE Plugin Compiler — {Flow.Name}*"
-        : $"UE Plugin Compiler — {System.IO.Path.GetFileName(Flow.FilePath)}";
+    private bool _isModified;
+    public bool IsModified
+    {
+        get => _isModified;
+        set { _isModified = value; OnPropertyChanged(); UpdateTitle(); }
+    }
+
+    public string Title
+    {
+        get
+        {
+            var name = string.IsNullOrWhiteSpace(Flow.FilePath)
+                ? Flow.Name
+                : System.IO.Path.GetFileName(Flow.FilePath);
+            return $"UE Plugin Compiler — {name}{(_isModified ? "*" : "")}";
+        }
+    }
 
     public ObservableCollection<BuildTask> Tasks { get; } = [];
     public ObservableCollection<string> LogLines { get; } = [];
@@ -28,7 +42,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
     public string GlobalOutputDir
     {
         get => _globalOutputDir;
-        set { _globalOutputDir = value; OnPropertyChanged(); }
+        set { _globalOutputDir = value; OnPropertyChanged(); MarkModified(); }
     }
 
     private string _statusText = "Ready";
@@ -67,7 +81,8 @@ public class FlowEditorViewModel : INotifyPropertyChanged
 
     public event Action<string>? OutputLineReceived;
     public event Action? CompilationStarted;
-    public event Action<string>? CompilationCompleted;
+    public event Action<string, int, int>? CompilationCompleted; // outputDir, succeeded, failed
+    public event Action? FlowClosed;
 
     public ICommand NewFlowCommand { get; }
     public ICommand OpenFlowCommand { get; }
@@ -79,6 +94,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
     public ICommand RemoveTaskCommand { get; }
     public ICommand MoveUpTaskCommand { get; }
     public ICommand MoveDownTaskCommand { get; }
+    public ICommand CloseFlowCommand { get; }
     public ICommand RunAllCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand BrowseOutputCommand { get; }
@@ -96,6 +112,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         MoveUpTaskCommand = new RelayCommand(p => { if (p is BuildTask t) MoveTask(t, -1); });
         MoveDownTaskCommand = new RelayCommand(p => { if (p is BuildTask t) MoveTask(t, 1); });
         RunAllCommand = new AsyncRelayCommand(async _ => await RunAllAsync(), _ => CanRun);
+        CloseFlowCommand = new RelayCommand(_ => CloseFlow(), _ => NotCompiling);
         CancelCommand = new RelayCommand(_ => Cancel());
         BrowseOutputCommand = new RelayCommand(_ =>
         {
@@ -112,10 +129,12 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         Tasks.Clear();
         if (flow.Tasks != null)
             foreach (var t in flow.Tasks) Tasks.Add(t);
-        GlobalOutputDir = flow.OutputDir ?? "";
-        UpdateTitle();
+        _globalOutputDir = flow.OutputDir ?? "";
+        OnPropertyChanged(nameof(GlobalOutputDir));
         IsOutputVisible = false;
         LogLines.Clear();
+        _isModified = false;
+        UpdateTitle();
         var displayName = flow.FilePath != null
             ? System.IO.Path.GetFileNameWithoutExtension(flow.FilePath)
             : flow.Name;
@@ -124,19 +143,33 @@ public class FlowEditorViewModel : INotifyPropertyChanged
 
     private void UpdateTitle() => OnPropertyChanged(nameof(Title));
 
+    private void MarkModified()
+    {
+        if (!_isModified)
+        {
+            _isModified = true;
+            UpdateTitle();
+        }
+    }
+
     // ─── Flow file ops ────────────────────────────────────────
 
     private void NewFlow()
     {
-        if (Tasks.Count > 0)
-        {
-            if (!Views.DarkDialog.Confirm("New Flow", "Discard current flow?", "Discard")) return;
-        }
+        if (!TrySaveBeforeDiscard("New Flow", "Discard current flow?")) return;
         SetFlow(new BuildFlow { Name = "Untitled" });
+    }
+
+    private void CloseFlow()
+    {
+        if (!TrySaveBeforeDiscard("Close Flow",
+                $"Return to Welcome?\nSave changes before closing.")) return;
+        FlowClosed?.Invoke();
     }
 
     private void OpenFlow()
     {
+        if (!TrySaveBeforeDiscard("Open Flow", "Open a different flow?\nSave changes before opening.")) return;
         var d = new Microsoft.Win32.OpenFileDialog { Filter = "BuildFlow (*.uflow)|*.uflow", Title = "Open BuildFlow" };
         if (d.ShowDialog() == true)
         {
@@ -145,23 +178,61 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Show save/discard/cancel if the flow is modified. Returns true when safe to proceed
+    /// (user chose Save or Discard), false when the action should be cancelled.
+    /// Call this before any operation that would discard the current flow.
+    /// </summary>
+    public bool TrySaveBeforeDiscard(string title, string message)
+    {
+        if (!_isModified) return true;
+
+        var name = Flow.FilePath != null
+            ? System.IO.Path.GetFileNameWithoutExtension(Flow.FilePath)
+            : Flow.Name;
+
+        var choice = Views.DarkDialog.SaveDiscardCancel(title,
+            $"{message}\n\nSave changes to \"{name}\"?",
+            Flow.FilePath != null ? "Save" : "Save As…");
+
+        if (choice == null) return false;        // Cancel
+        if (choice == false) return true;         // Discard
+
+        // Save
+        if (Flow.FilePath != null)
+            DoSave(Flow.FilePath);
+        else
+            return DoSaveAs();
+        return true;
+    }
+
     private void SaveFlow()
     {
-        if (Flow.FilePath != null) { FlowSerializer.Save(Flow); AddToRecent(Flow.FilePath); UpdateTitle(); StatusText = $"Saved: {Flow.Name}"; }
-        else SaveAsFlow();
+        if (Flow.FilePath != null)
+            DoSave(Flow.FilePath);
+        else
+            DoSaveAs();
     }
-    private void SaveAsFlow()
+
+    public bool DoSaveAs()
     {
         var d = new Microsoft.Win32.SaveFileDialog { Filter = "BuildFlow (*.uflow)|*.uflow", Title = "Save BuildFlow", DefaultExt = ".uflow" };
-        if (d.ShowDialog() == true)
-        {
-            Flow.OutputDir = GlobalOutputDir;
-            Flow.Tasks = Tasks.ToList();
-            FlowSerializer.Save(Flow, d.FileName);
-            AddToRecent(d.FileName);
-            UpdateTitle();
-            StatusText = $"Saved: {System.IO.Path.GetFileName(d.FileName)}";
-        }
+        if (d.ShowDialog() != true) return false;
+        DoSave(d.FileName);
+        return true;
+    }
+
+    private void SaveAsFlow() => DoSaveAs();
+
+    public void DoSave(string filePath)
+    {
+        Flow.OutputDir = GlobalOutputDir;
+        Flow.Tasks = Tasks.ToList();
+        FlowSerializer.Save(Flow, filePath);
+        AddToRecent(filePath);
+        _isModified = false;
+        UpdateTitle();
+        StatusText = $"Saved: {System.IO.Path.GetFileName(filePath)}";
     }
 
     private static void AddToRecent(string path)
@@ -185,6 +256,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         {
             Helpers.Logger.Log($"Before Tasks.Add, count={Tasks.Count}");
             Tasks.Add(task);
+            MarkModified();
             Helpers.Logger.Log($"After Tasks.Add, count={Tasks.Count}");
             try { StatusText = $"Task '{task.Name}' added."; }
             catch (Exception ex) { Helpers.Logger.LogException(ex); throw; }
@@ -201,7 +273,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         var idx = Tasks.IndexOf(task);
         var edited = await Views.TaskEditorDialog.ShowDialogAsync(Application.Current.MainWindow, task);
         Helpers.Logger.Log($"EditTaskAsync: dialog returned, edited={edited?.Name}");
-        if (edited != null) { Tasks[idx] = edited; StatusText = $"Task '{edited.Name}' updated."; UpdateTitle(); }
+        if (edited != null) { Tasks[idx] = edited; MarkModified(); StatusText = $"Task '{edited.Name}' updated."; UpdateTitle(); }
     }
 
     private void CopyTask(BuildTask task)
@@ -210,9 +282,10 @@ public class FlowEditorViewModel : INotifyPropertyChanged
             System.Text.Json.JsonSerializer.Serialize(task))!;
         clone.Name += " (copy)";
         Tasks.Add(clone);
+        MarkModified();
     }
 
-    private void RemoveTask(BuildTask task) { Tasks.Remove(task); UpdateTitle(); }
+    private void RemoveTask(BuildTask task) { Tasks.Remove(task); MarkModified(); UpdateTitle(); }
 
     private void MoveTask(BuildTask task, int delta)
     {
@@ -220,6 +293,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         var newIdx = idx + delta;
         if (newIdx < 0 || newIdx >= Tasks.Count) return;
         Tasks.Move(idx, newIdx);
+        MarkModified();
     }
 
     // ─── Run All ──────────────────────────────────────────────
@@ -420,7 +494,7 @@ public class FlowEditorViewModel : INotifyPropertyChanged
 
                 if (failed.Count == 0) StatusText = $"All {succeeded.Count} OK in {elapsed.TotalMinutes:F1} min.";
                 else StatusText = $"{succeeded.Count} OK, {failed.Count} FAIL: {string.Join(", ", failed.Select(r => $"{r.Task.Name}/{r.Engine.Version}"))}";
-                CompilationCompleted?.Invoke(GlobalOutputDir);
+                CompilationCompleted?.Invoke(GlobalOutputDir, succeeded.Count, failed.Count);
             }
             foreach (var line in LogLines) OutputLineReceived?.Invoke(line);
             ProgressPercent = 100;

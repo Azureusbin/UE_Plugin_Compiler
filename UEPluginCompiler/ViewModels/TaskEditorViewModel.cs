@@ -128,8 +128,6 @@ public class TaskEditorViewModel : INotifyPropertyChanged
         });
         OKCommand = new RelayCommand(_ => Confirm());
         CancelCommand = new RelayCommand(_ => { Confirmed = false; CloseAction?.Invoke(); });
-
-        _ = LoadEnginesAsync();
     }
 
     /// <summary>Directory containing the selected .uplugin — mirror of the packaged plugin layout.</summary>

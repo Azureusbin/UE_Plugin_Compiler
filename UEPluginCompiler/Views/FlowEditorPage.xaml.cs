@@ -10,6 +10,7 @@ namespace UEPluginCompiler.Views;
 public partial class FlowEditorPage : UserControl
 {
     private FlowEditorViewModel? _vm;
+    public FlowEditorViewModel? ViewModel => _vm;
     public bool IsCompiling => _vm?.IsCompiling ?? false;
 
     public FlowEditorPage(FlowEditorViewModel vm)
@@ -23,15 +24,25 @@ public partial class FlowEditorPage : UserControl
             txtOutput.Document.Blocks.Clear();
             txtOutput.Document.Blocks.Add(new Paragraph());
         });
-        _vm.CompilationCompleted += dir =>
+        _vm.CompilationCompleted += (dir, succeeded, failed) =>
         {
-            if (!string.IsNullOrWhiteSpace(dir))
-                Dispatcher.Invoke(() =>
+            Dispatcher.Invoke(() =>
+            {
+                if (failed > 0)
+                {
+                    DarkDialog.Info("Build Failed",
+                        $"Build completed with failures.\n\n" +
+                        $"✅ {succeeded} succeeded\n" +
+                        $"❌ {failed} failed\n\n" +
+                        $"Check the output log for details.");
+                }
+                else if (!string.IsNullOrWhiteSpace(dir))
                 {
                     var dlg = new CompletionDialog("Compilation finished.", dir);
                     dlg.Owner = Window.GetWindow(this);
                     dlg.ShowDialog();
-                });
+                }
+            });
         };
     }
 
