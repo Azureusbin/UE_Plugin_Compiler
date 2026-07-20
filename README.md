@@ -1,52 +1,52 @@
 # UE Plugin Compiler
 
-A Windows desktop tool for batch-compiling Unreal Engine plugins across multiple engine versions with configurable build flows, post-build steps, and real-time log streaming.
+一款 Windows 桌面工具，用于跨多个 Unreal Engine 版本批量编译插件，支持可配置的编译流程、构建后处理步骤和实时日志输出。
 
-## Features
+## 功能
 
-- 🔍 **Auto-detects UE installations** — scans Windows registry (64-bit + 32-bit) and filesystem (`C:\`, `D:\Program Files\Epic Games`)
-- ✋ **Custom engine paths** — add source builds from any folder via the Settings page
-- 📋 **BuildFlow system** — define multi-task pipelines, save/load `.uflow` files
-- 🔀 **Batch compilation** — compile one plugin × N engines × M tasks in a single run
-- 🧹 **Post-build steps** — delete globs, copy files, or run `.bat`/`.cmd` scripts on the packaged plugin before it lands in the final output
-- 🔧 **Environment variables** — inject env vars per task (e.g. `EDITORCRYPT_BUILD_MODE`)
-- 🎨 **Log coloring** — customizable error/warning/success/normal colors (Settings page)
-- 📊 **Real-time output** — live streaming UAT log with progress
-- 📁 **Structured output** — results organized by `{EngineVersion}/{TaskName}/{PluginName}/`
-- 🪟 **Dark theme** — UE-inspired palette with a custom title bar
-- ✅ **Completion dialog** — summary with succeeded/failed counts and one-click "Open Output Folder"
-- 💾 **Portable** — single `.exe`, all data in `Saved/` folder
+- 🔍 **自动检测 UE 安装** — 扫描 Windows 注册表（64 位 + 32 位）和文件系统（`C:\`、`D:\Program Files\Epic Games`）
+- ✋ **自定义引擎路径** — 通过设置页面添加任意目录下的源码构建版本
+- 📋 **BuildFlow 流程系统** — 定义多任务编译管线，支持保存/加载 `.uflow` 文件
+- 🔀 **批量编译** — 单次运行即可完成 1 个插件 × N 个引擎 × M 个任务的编译
+- 🧹 **构建后处理** — 在最终输出前对打包产物执行删除（glob 匹配）、复制或运行 `.bat`/`.cmd` 脚本
+- 🔧 **环境变量注入** — 按任务注入环境变量（如 `EDITORCRYPT_BUILD_MODE`）
+- 🎨 **日志着色** — 可在设置页面自定义错误/警告/成功/普通日志的颜色
+- 📊 **实时输出** — 实时流式显示 UAT 构建日志及进度
+- 📁 **结构化输出** — 结果按 `{引擎版本}/{任务名称}/{插件名称}/` 组织
+- 🪟 **深色主题** — UE 风格配色 + 自定义标题栏
+- ✅ **完成弹窗** — 构建摘要包含成功/失败计数和"打开输出目录"按钮
+- 💾 **便携运行** — 单文件 `.exe`，所有数据保存在 `Saved/` 目录
 
-## Requirements
+## 系统要求
 
-- Windows 10 / 11 (64-bit)
-- .NET 10 SDK (or use the self-contained exe)
-- At least one Unreal Engine installation
+- Windows 10 / 11（64 位）
+- .NET 10 SDK（使用自包含 exe 则无需安装）
+- 至少已安装一个 Unreal Engine 版本
 
-## Quick Start
+## 快速开始
 
-1. Launch `UEPluginCompiler.exe`
-2. Click **New BuildFlow** (or open a recent `.uflow`)
-3. Click **+ Add Task** — pick engines, select `.uplugin`, set env vars and post-build steps
-4. Repeat for each build configuration
-5. Set output directory → **Run All Tasks**
+1. 启动 `UEPluginCompiler.exe`
+2. 点击 **新建 BuildFlow**（或打开最近的 `.uflow` 文件）
+3. 点击 **+ 添加任务** — 选择引擎、选取 `.uplugin`、配置环境变量和构建后处理步骤
+4. 为每种构建配置重复上述步骤
+5. 设置输出目录 → **运行全部任务**
 
-## Screens
+## 界面概览
 
-| Screen | Purpose |
-|--------|---------|
-| **Welcome** | New / Open / Recent BuildFlows |
-| **Flow Editor** | Task list, output dir, Run All, live log panel, cancel |
-| **Task Editor** | Per-task engine selection, plugin, env vars, post-build steps, clean build toggle |
-| **Settings** | Engine management, log color customization (⚙ in title bar) |
+| 页面 | 用途 |
+|------|------|
+| **欢迎页** | 新建 / 打开 / 最近使用的 BuildFlow |
+| **流程编辑器** | 任务列表、输出目录、全部运行、实时日志面板、取消 |
+| **任务编辑器** | 按任务选择引擎、插件、环境变量、构建后处理步骤、Clean 构建开关 |
+| **设置页** | 引擎管理、日志颜色自定义（标题栏 ⚙ 图标） |
 
-## BuildFlow Files (`.uflow`)
+## BuildFlow 文件（`.uflow`）
 
-JSON format with camelCase keys, stored wherever you choose:
+JSON 格式，camelCase 键名，可存放在任意位置：
 
 ```json
 {
-  "name": "EditorCrypt All Modes",
+  "name": "EditorCrypt 全模式编译",
   "outputDir": "F:/Builds/EditorCrypt",
   "tasks": [
     {
@@ -68,116 +68,124 @@ JSON format with camelCase keys, stored wherever you choose:
 }
 ```
 
-| Field (task-level) | Type | Description |
-|-----|------|-------------|
-| `outputDir` | `string` | Per-task override; falls back to the flow-level `outputDir` if empty |
-| `cleanBuild` | `bool` | Pass `-Clean` to UAT for a full rebuild |
-| `noP4` | `bool` | Pass `-NoP4` to UAT (default `true`) |
-| `postBuildSteps` | `array` | Delete, copy, or run steps executed on the packaged output (see below) |
+| 字段（任务级） | 类型 | 说明 |
+|------|------|------|
+| `outputDir` | `string` | 按任务覆盖输出目录；为空则回退到流程级 `outputDir` |
+| `cleanBuild` | `bool` | 向 UAT 传递 `-Clean` 以执行完整重新构建 |
+| `noP4` | `bool` | 向 UAT 传递 `-NoP4`（默认 `true`） |
+| `postBuildSteps` | `array` | 对打包输出执行的删除、复制或运行步骤（见下文） |
 
-### Post-Build Steps
+### 构建后处理步骤
 
-Steps run on the intermediate package directory **after** a successful UAT build and **before** the result is copied to the final output folder.
+步骤在 UAT 构建**成功后**、将结果复制到最终输出目录**之前**，在中间打包目录上执行。
 
-| Type | `pattern` | `destination` | Behavior |
-|------|-----------|---------------|----------|
-| `"delete"` | Glob (e.g. `**/*.pdb`) | — | Deletes matched files; 0 matches → warning only; prunes empty dirs after |
-| `"copy"` | Glob | Dir relative to package root | Copies matched files into the destination; 0 matches → **fatal error** |
-| `"run"` | `.bat`/`.cmd` path | — | Executes script with `PACKAGE_DIR`, `PLUGIN_DIR`, `ENGINE_VERSION`, `ENGINE_DIR`, `TASK_NAME`, `OUTPUT_DIR` env vars; non-zero exit → **fatal error** |
+| 类型 | `pattern` | `destination` | 行为 |
+|------|-----------|---------------|------|
+| `"delete"` | Glob（如 `**/*.pdb`） | — | 删除匹配的文件；0 匹配 → 仅警告；执行后清理空目录 |
+| `"copy"` | Glob | 相对于包根目录的路径 | 将匹配文件复制到目标目录；0 匹配 → **致命错误** |
+| `"run"` | `.bat`/`.cmd` 路径 | — | 执行脚本，注入 `PACKAGE_DIR`、`PLUGIN_DIR`、`ENGINE_VERSION`、`ENGINE_DIR`、`TASK_NAME`、`OUTPUT_DIR` 环境变量；非零退出码 → **致命错误** |
 
-Paths in `pattern` and `destination` are relative to the packaged plugin root. For run steps, the script path resolves against the plugin source directory first (so the `.bat` can live next to the `.uplugin`), then the package directory. Use forward slashes.
+`pattern` 和 `destination` 中的路径相对于打包后的插件根目录。对于 run 步骤，脚本路径优先在插件源码目录中解析（这样 `.bat` 可以和 `.uplugin` 放在一起），其次在打包目录中解析。请使用正斜杠。
 
-## Directory Layout
+## 目录结构
 
 ```
 UEPluginCompiler.exe
 Saved/
-├── settings.json           # Recent flows list + log colors
-├── custom_engines.json     # User-added engine paths
-├── debug.log               # Debug build only
+├── settings.json           # 最近使用的流程列表 + 日志颜色配置
+├── custom_engines.json     # 用户手动添加的引擎路径
+├── debug.log               # 仅 Debug 构建时输出
 └── logs/
     └── 2026-07-17_143052/
         └── _summary.log
 ```
 
-## Build from Source
+## 从源码构建
 
 ```bash
-# Prerequisites: .NET 10 SDK
+# 前置条件：.NET 10 SDK
 dotnet build UEPluginCompiler
 
-# Run (Debug)
+# 运行（Debug）
 dotnet run --project UEPluginCompiler
 
-# Publish single-file exe
+# 发布单文件 exe
 dotnet publish UEPluginCompiler -c Release -r win-x64 \
   --self-contained true -p:PublishSingleFile=true \
   -p:EnableCompressionInSingleFile=true \
   -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
 
-# Or on Windows: publish.bat
+# 或在 Windows 上直接运行：publish.bat
 ```
 
-## How It Works
+## 工作原理
 
-### UE Detection
-1. **Registry**: `HKLM\SOFTWARE\EpicGames\Unreal Engine` (64-bit + 32-bit views)
-2. **Filesystem**: `C:\Program Files\Epic Games\UE_*`, `C:\Program Files (x86)\Epic Games\UE_*`, `D:\Program Files\Epic Games\UE_*`
-3. **Custom paths**: added via Settings page, persisted to `Saved/custom_engines.json`
+### UE 检测
+1. **注册表**：`HKLM\SOFTWARE\EpicGames\Unreal Engine`（64 位 + 32 位视图）
+2. **文件系统**：`C:\Program Files\Epic Games\UE_*`、`C:\Program Files (x86)\Epic Games\UE_*`、`D:\Program Files\Epic Games\UE_*`
+3. **自定义路径**：通过设置页面添加，持久化到 `Saved/custom_engines.json`
 
-All entries are validated against the presence of `Engine\Build\BatchFiles\RunUAT.bat`. Version numbers are read from `Engine\Build\Build.version` JSON (falling back to the directory name). Stale registry entries pointing to deleted folders are silently filtered out.
+所有条目均通过 `Engine\Build\BatchFiles\RunUAT.bat` 是否存在进行验证。版本号从 `Engine\Build\Build.version` JSON 中读取（回退到目录名）。指向已删除目录的失效注册表项会被静默过滤。
 
-### Compilation
-1. For each Task → each selected Engine:
-   - Write env vars into the process
-   - Compile to a temp directory via `RunUAT.bat BuildPlugin` (avoids path-length issues)
-   - Run post-build steps on the temp package (if any)
-   - Copy the result to `{OutputDir}/{EngineVersion}/{TaskName}/{PluginName}/`
-2. Live stdout/stderr streamed from the UAT process
-3. On completion: summary with ✅/❌ per task per engine + total elapsed time
+### 编译流程
+1. 对每个任务 → 每个选中的引擎：
+   - 将环境变量写入进程
+   - 通过 `RunUAT.bat BuildPlugin` 编译到临时目录（避免路径过长问题）
+   - 在临时打包目录上执行构建后处理步骤（如有）
+   - 将结果复制到 `{输出目录}/{引擎版本}/{任务名称}/{插件名称}/`
+2. 实时流式输出 UAT 进程的 stdout/stderr
+3. 完成后：显示每个任务每个引擎的 ✅/❌ 摘要及总耗时
 
-### Cancellation
-Clicking **Cancel** kills the current UAT process (entire process tree), skips remaining tasks, and cleans up intermediate directories. Already-completed tasks are preserved.
+### 取消编译
+点击 **取消** 会终止当前 UAT 进程（整个进程树），跳过剩余任务，并清理中间目录。已完成的任务会被保留。
 
-## Project Structure
+## 项目结构
 
 ```
 UEPluginCompiler/
 ├── Models/
-│   ├── BuildFlow.cs          # BuildFlow, BuildTask, PostBuildStep
-│   ├── BuildResult.cs        # BuildResult record
-│   ├── CompileRequest.cs     # CompileRequest record
-│   └── EngineInstall.cs      # EngineInstall (INotifyPropertyChanged)
+│   ├── BuildFlow.cs          # BuildFlow、BuildTask、PostBuildStep
+│   ├── BuildResult.cs        # BuildResult 记录
+│   ├── CompileRequest.cs     # CompileRequest 记录
+│   └── EngineInstall.cs      # EngineInstall（INotifyPropertyChanged）
 ├── Services/
-│   ├── UEDetector.cs         # Registry + filesystem engine detection
-│   ├── PluginCompiler.cs     # RunUAT.BuildPlugin execution with cancellation
-│   ├── PostBuildRunner.cs    # Post-build delete/copy/run step executor
-│   ├── FlowSerializer.cs     # .uflow JSON read/write
-│   └── SettingsManager.cs    # AppSettings + custom engines persistence
+│   ├── UEDetector.cs         # 注册表 + 文件系统引擎检测
+│   ├── PluginCompiler.cs     # RunUAT.BuildPlugin 执行与取消
+│   ├── PostBuildRunner.cs    # 构建后处理 delete/copy/run 步骤执行器
+│   ├── FlowSerializer.cs     # .uflow JSON 读写
+│   └── SettingsManager.cs    # AppSettings + 自定义引擎持久化
 ├── ViewModels/
-│   ├── WelcomeViewModel.cs   # Recent flows, new/open actions
-│   ├── FlowEditorViewModel.cs # Task CRUD, Run All orchestration, logging
-│   ├── TaskEditorViewModel.cs # Per-task engine/env/post-build editing
-│   ├── SettingsViewModel.cs  # Engine management + log color customization
+│   ├── WelcomeViewModel.cs   # 最近流程、新建/打开操作
+│   ├── FlowEditorViewModel.cs # 任务增删改、全部运行编排、日志
+│   ├── TaskEditorViewModel.cs # 按任务编辑引擎/环境变量/构建后处理
+│   ├── SettingsViewModel.cs  # 引擎管理 + 日志颜色自定义
 │   └── RelayCommand.cs       # RelayCommand + AsyncRelayCommand
 ├── Views/
 │   ├── WelcomePage.xaml/.cs
 │   ├── FlowEditorPage.xaml/.cs
 │   ├── TaskEditorDialog.xaml/.cs
 │   ├── SettingsPage.xaml/.cs
-│   ├── CompletionDialog.xaml/.cs  # Post-build summary dialog
-│   └── DarkDialog.cs             # Dark-themed MessageBox replacements
+│   ├── CompletionDialog.xaml/.cs  # 构建完成摘要弹窗
+│   └── DarkDialog.cs             # 深色主题 MessageBox 替代
 ├── Helpers/
-│   ├── Logger.cs             # Debug-only file logger
-│   ├── PathValidator.cs      # .uplugin validation, version extraction
-│   └── FolderBrowser.cs      # COM IFileDialog wrapper (no WinForms dep)
+│   ├── Logger.cs             # Debug 模式下的文件日志
+│   ├── PathValidator.cs      # .uplugin 验证、版本号提取
+│   └── FolderBrowser.cs      # COM IFileDialog 封装（无 WinForms 依赖）
 ├── Converters/
 │   └── BoolToVisibilityConverter.cs
-├── App.xaml                  # Dark theme resources, global styles
+├── App.xaml                  # 深色主题资源、全局样式
 ├── App.xaml.cs
-└── MainWindow.xaml/.cs       # Custom title bar, page navigation
+└── MainWindow.xaml/.cs       # 自定义标题栏、页面导航
 ```
 
-## License
+## 许可证
 
-MIT
+本项目采用 [MIT License](LICENSE) 开源。
+
+## 作者
+
+**AzureusBin**
+
+---
+
+> 如果这个工具有帮到你，欢迎点个 Star ⭐
