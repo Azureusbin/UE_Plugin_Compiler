@@ -9,6 +9,8 @@ namespace UEPluginCompiler;
 
 public partial class MainWindow : Window
 {
+    private FlowEditorViewModel? _currentFlowVm;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -19,6 +21,8 @@ public partial class MainWindow : Window
 
     private void ShowWelcome()
     {
+        UnbindTitle();
+        TitleBarText.Text = "  UE Plugin Compiler";
         var welcomeVm = new WelcomeViewModel();
         welcomeVm.FlowOpened += flow =>
         {
@@ -38,14 +42,38 @@ public partial class MainWindow : Window
 
     private void ShowFlowEditor(BuildFlow flow)
     {
+        UnbindTitle();
         var flowVm = new FlowEditorViewModel();
         flowVm.SetFlow(flow);
+        flowVm.PropertyChanged += OnFlowPropertyChanged;
+        _currentFlowVm = flowVm;
         flowVm.FlowClosed += () =>
         {
             Dispatcher.Invoke(() => ShowWelcome());
         };
         PageHost.Content = new FlowEditorPage(flowVm);
+        UpdateTitleBar(flowVm.Title);
         Logger.Log("FlowEditorPage shown");
+    }
+
+    private void OnFlowPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(FlowEditorViewModel.Title) && _currentFlowVm != null)
+            Dispatcher.Invoke(() => UpdateTitleBar(_currentFlowVm.Title));
+    }
+
+    private void UnbindTitle()
+    {
+        if (_currentFlowVm != null)
+        {
+            _currentFlowVm.PropertyChanged -= OnFlowPropertyChanged;
+            _currentFlowVm = null;
+        }
+    }
+
+    private void UpdateTitleBar(string title)
+    {
+        TitleBarText.Text = $"  {title}";
     }
 
     // ─── Title bar ────────────────────────────────────────────

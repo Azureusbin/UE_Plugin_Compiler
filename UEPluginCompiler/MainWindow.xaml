@@ -33,7 +33,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="  UE Plugin Compiler — AzureusBin"
+                <TextBlock x:Name="TitleBarText" Grid.Column="0"
                            Foreground="{StaticResource TextBrush}" FontSize="12"
                            FontWeight="SemiBold" VerticalAlignment="Center"
                            shell:WindowChrome.IsHitTestVisibleInChrome="True"/>

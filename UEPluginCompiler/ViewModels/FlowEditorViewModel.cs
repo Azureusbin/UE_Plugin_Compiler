@@ -306,9 +306,6 @@ public class FlowEditorViewModel : INotifyPropertyChanged
         Flow.OutputDir = GlobalOutputDir;
         Flow.Tasks = Tasks.ToList();
 
-        // Save before run
-        if (Flow.FilePath != null) FlowSerializer.Save(Flow);
-
         // Detect engines
         var allEngines = new List<EngineInstall>();
         var detected = await _detector.DetectAllAsync();
