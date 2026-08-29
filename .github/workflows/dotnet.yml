@@ -1,0 +1,86 @@
+name: 自动化 .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    name: 构建打包
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      - name: 配置 .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: 缓存 NuGet 包
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 依赖项还原
+        run: dotnet restore
+
+      - name: 编译构建 exe
+        run: |
+          dotnet publish UEPluginCompiler/UEPluginCompiler.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            --output ./publish
+        shell: pwsh
+
+      - name: 上传构建产物（暂存）
+        uses: actions/upload-artifact@v4
+        with:
+          name: UEPluginCompiler-win-x64
+          path: ./publish
+
+  release:
+    name: 发布产物
+    runs-on: windows-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+    steps:
+      # 注意：需要先检出代码，否则读取不到 .csproj 文件！
+      - name: 检出代码（读取版本号用）
+        uses: actions/checkout@v7
+
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: UEPluginCompiler-win-x64
+          path: ./publish
+
+      - name: 从 csproj 提取版本号
+        id: get_version
+        run: |
+          $xml = [xml](Get-Content UEPluginCompiler/UEPluginCompiler.csproj)
+          $version = $xml.Project.PropertyGroup.Version
+          echo "version=v$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}   # 例如 v2.1.0
+          name: 发布 ${{ steps.get_version.outputs.version }}
+          files: ./publish/*
+          allow_updates: true    # 如果 Tag 已存在，允许更新 Release
+          allow_override: true   # 允许覆盖同名 Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
