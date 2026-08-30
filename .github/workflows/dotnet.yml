@@ -1,4 +1,4 @@
-name: 自动化 .NET
+name: .NET 构建与发布
 
 on:
   push:
@@ -35,10 +35,6 @@ jobs:
           dotnet publish UEPluginCompiler/UEPluginCompiler.csproj `
             --configuration Release `
             --runtime win-x64 `
-            --self-contained true `
-            -p:PublishSingleFile=true `
-            -p:EnableCompressionInSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
             --output ./publish
         shell: pwsh
 
@@ -57,11 +53,17 @@ jobs:
       contents: write
     steps:
       # 注意：需要先检出代码，否则读取不到 .csproj 文件！
-      - name: 检出代码（读取版本号用）
+      - name: 检出代码（指定所需文件）
         uses: actions/checkout@v7
+        with: 
+          sparse_checkout: |
+            UEPluginCompiler/UEPluginCompiler.csproj
+            ./README.md
+            ./LICENSE
+          sparse-checkout-cone-mode: false
 
       - name: 下载构建产物
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UEPluginCompiler-win-x64
           path: ./publish
