@@ -1,5 +1,7 @@
 # UE Plugin Compiler
 
+[![.NET 构建与发布](https://github.com/Azureusbin/UE_Plugin_Compiler/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/Azureusbin/UE_Plugin_Compiler/actions/workflows/dotnet.yml)
+
 一款 Windows 桌面工具，用于跨多个 Unreal Engine 版本批量编译插件，支持可配置的编译流程、构建后处理步骤和实时日志输出。
 
 ## 功能
@@ -22,6 +24,10 @@
 - Windows 10 / 11（64 位）
 - .NET 10 SDK（使用自包含 exe 则无需安装）
 - 至少已安装一个 Unreal Engine 版本
+
+## 下载
+
+前往 [Releases](https://github.com/Azureusbin/UE_Plugin_Compiler/releases) 下载最新的单文件免安装版（`UEPluginCompiler-win64-vX.Y.Z.zip`），解压即用，无需安装 .NET 运行时。
 
 ## 快速开始
 
@@ -117,6 +123,25 @@ dotnet publish UEPluginCompiler -c Release -r win-x64 \
 
 # 或在 Windows 上直接运行：publish.bat
 ```
+
+## 持续集成与自动发布
+
+仓库配置了 GitHub Actions（[`.github/workflows/dotnet.yml`](.github/workflows/dotnet.yml)），采用 **build → release** 两段式流水线：
+
+| 阶段 | 触发条件 | 主要动作 |
+|------|----------|----------|
+| `build` | push / PR 到 `master` | 还原依赖（NuGet 缓存按 `.csproj` 哈希命中）→ `dotnet publish` 产出 win-x64 单文件自包含 exe → 上传 artifact |
+| `release` | 仅 push 到 `master` | 下载 artifact → 从 `.csproj` 读取 `Version` 作为 tag → 打包 zip（含 exe / README / LICENSE）→ 自动创建 Release 并上传产物 |
+
+设计要点：
+
+- **版本号单一来源**——tag 名直接取自 `UEPluginCompiler.csproj` 的 `Version` 属性，发版只需改一处
+- **发布参数集中在 `.csproj`**——`PublishSingleFile` / `SelfContained` / `EnableCompressionInSingleFile` 写在项目文件中，CI 的 `dotnet publish` 无需重复传参；本地 `publish.bat` 显式传入相同参数，两条路径产出形态一致
+- **跨 job 产物传递**——`release` 通过 `needs: build` 依赖构建阶段，用 artifact 传递产物而非重复编译
+- **最小权限**——`release` job 仅申请 `contents: write`，用于创建 Release
+- **全自动**——Release 与产物均由 CI 自动创建，无需人工干预；产物附 SHA256 校验值，可追溯来源
+
+发布新版本：修改 `.csproj` 中的 `Version` → 提交并推送到 `master`，其余交给 CI。
 
 ## 工作原理
 
