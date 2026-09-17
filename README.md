@@ -4,6 +4,10 @@
 
 一款 Windows 桌面工具，用于跨多个 Unreal Engine 版本批量编译插件，支持可配置的编译流程、构建后处理步骤和实时日志输出。
 
+![流程编辑器主界面](Doc/Images/Primary%20Interface.png)
+
+*流程编辑器：任务卡片显示每个任务使用的引擎与插件，UAT 日志按级别着色实时输出，底部状态栏跟踪当前进度（`Running Task: RuntimeAudioImporter → UE 5.8 (2/3)`），运行期间按钮切换为 **Cancel**。*
+
 ## 功能
 
 - 🔍 **自动检测 UE 安装** — 扫描 Windows 注册表（64 位 + 32 位）和文件系统（`C:\`、`D:\Program Files\Epic Games`）
@@ -45,6 +49,12 @@
 | **流程编辑器** | 任务列表、输出目录、全部运行、实时日志面板、取消 |
 | **任务编辑器** | 按任务选择引擎、插件、环境变量、构建后处理步骤、Clean 构建开关 |
 | **设置页** | 引擎管理、日志颜色自定义（标题栏 ⚙ 图标） |
+
+### 设置页
+
+![设置页 — 引擎管理与日志配色](Doc/Images/Settings%20Panel.png)
+
+*引擎列表包含版本 / 显示名 / 路径 / 来源 / 状态（来源区分 `registry` 与 `filesystem`，指向已删除目录的失效项会被过滤），状态栏显示检测到的引擎数量；下方可为 Error、Warning、Success、Normal 四级日志分别配色，或一键 **Reset Defaults** 恢复默认。*
 
 ## BuildFlow 文件（`.uflow`）
 
@@ -160,6 +170,10 @@ dotnet publish UEPluginCompiler -c Release -r win-x64 \
    - 将结果复制到 `{输出目录}/{引擎版本}/{任务名称}/{插件名称}/`
 2. 实时流式输出 UAT 进程的 stdout/stderr
 3. 完成后：显示每个任务每个引擎的 ✅/❌ 摘要及总耗时
+
+![构建完成摘要](Doc/Images/Compile%20Result.png)
+
+*构建完成摘要：按任务分组列出每个引擎的 ✅/❌ 结果、退出码与耗时，末尾汇总成功/失败总数与总耗时；同样的内容会写入 `Saved/logs/<时间戳>/_summary.log`。*
 
 ### 取消编译
 点击 **取消** 会终止当前 UAT 进程（整个进程树），跳过剩余任务，并清理中间目录。已完成的任务会被保留。
